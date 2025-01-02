@@ -1,0 +1,82 @@
+{
+  "Comment": "Fluxo Step Functions usando Bedrock, S3 e EC2",
+  "StartAt": "DESAFIO_DIO_ReceberArquivo",
+  "States": {
+    "DESAFIO_DIO_ReceberArquivo": {
+      "Type": "Pass",
+      "Parameters": {
+        "BucketName": "meu-bucket",
+        "Key": "texto-sentimento-usuario.txt"
+      },
+      "Next": "DESAFIO_DIO_RealizarAnaliseSentimento"
+    },
+    "DESAFIO_DIO_RealizarAnaliseSentimento": {
+      "Type": "Task",
+      "Resource": "arn:aws:bedrock:REGIAO:ID_DA_CONTA:model/bedrock-model-name",
+      "Parameters": {
+        "Input.$": "$.Key",
+        "Configuration": {
+          "TaskType": "sentiment-analysis"
+        }
+      },
+      "Next": "DESAFIO_DIO_VerificarSentimento"
+    },
+    "DESAFIO_DIO_VerificarSentimento": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Sentiment",
+          "StringEquals": "Positivo",
+          "Next": "DESAFIO_DIO_AcionarEC2"
+        }
+      ],
+      "Default": "DESAFIO_DIO_SalvarResultadoNegativo"
+    },
+    "DESAFIO_DIO_AcionarEC2": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:REGIAO:ID_DA_CONTA:action:ec2:runInstances",
+      "Parameters": {
+        "ImageId": "ami-EXEMPLO",
+        "InstanceType": "t2.micro",
+        "MinCount": 1,
+        "MaxCount": 1,
+        "KeyName": "minha-chave-ec2",
+        "TagSpecifications": [
+          {
+            "ResourceType": "instance",
+            "Tags": [
+              {
+                "Key": "Name",
+                "Value": "DESAFIO_DIO_EC2_Instance"
+              }
+            ]
+          }
+        ]
+      },
+      "Next": "DESAFIO_DIO_FinalizarProcessamento"
+    },
+    "DESAFIO_DIO_SalvarResultadoNegativo": {
+      "Type": "Task",
+      "Resource": "arn:aws:s3:::meu-bucket",
+      "Parameters": {
+        "Bucket": "meu-bucket",
+        "Key": "resultados/resultado-negativo.json",
+        "Body.$": "$"
+      },
+      "Next": "DESAFIO_DIO_Final"
+    },
+    "DESAFIO_DIO_FinalizarProcessamento": {
+      "Type": "Task",
+      "Resource": "arn:aws:s3:::meu-bucket",
+      "Parameters": {
+        "Bucket": "meu-bucket",
+        "Key": "resultados/resultado-positivo.json",
+        "Body.$": "$"
+      },
+      "Next": "DESAFIO_DIO_Final"
+    },
+    "DESAFIO_DIO_Final": {
+      "Type": "Succeed"
+    }
+  }
+}
