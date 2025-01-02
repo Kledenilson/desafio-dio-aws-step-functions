@@ -1,0 +1,37 @@
+{
+  "Comment": "Fluxo simples para aprendizado sobre AWS Step Functions",
+  "StartAt": "DESAFIO_DIO_ValidarInput",
+  "States": {
+    "DESAFIO_DIO_ValidarInput": {
+      "Type": "Pass",
+      "Parameters": {
+        "Input.$": "$.valor"
+      },
+      "Next": "DESAFIO_DIO_VerificarValor"
+    },
+    "DESAFIO_DIO_VerificarValor": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Input",
+          "NumericGreaterThan": 10,
+          "Next": "DESAFIO_DIO_ValorMaiorQue10"
+        }
+      ],
+      "Default": "DESAFIO_DIO_ValorMenorOuIgualA10"
+    },
+    "DESAFIO_DIO_ValorMaiorQue10": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGIAO:ID_DA_CONTA:function:FuncaoMaiorQue10",
+      "Next": "DESAFIO_DIO_Final"
+    },
+    "DESAFIO_DIO_ValorMenorOuIgualA10": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:REGIAO:ID_DA_CONTA:function:FuncaoMenorQue10",
+      "Next": "DESAFIO_DIO_Final"
+    },
+    "DESAFIO_DIO_Final": {
+      "Type": "Succeed"
+    }
+  }
+}
